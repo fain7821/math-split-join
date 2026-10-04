@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>數字分與合 互動練習</title>
+    <style>
+        :root {
+            --primary-color: #4A90E2;
+            --secondary-color: #FF6B6B;
+            --accent-color: #FFD166;
+            --bg-color: #F7F9FC;
+            --card-bg: #FFFFFF;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none; /* 防止拉動卡牌時選取文字 */
+        }
+
+        body {
+            font-family: "PingFang TC", "Microsoft JhengHei", sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* 老師控制區 */
+        .teacher-panel {
+            background-color: var(--card-bg);
+            border: 3px dashed var(--primary-color);
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .panel-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        select, input {
+            font-size: 1.2rem;
+            padding: 5px 10px;
+            border-radius: 8px;
+            border: 2px solid #CCC;
+        }
+
+        /* 操作教學引導 */
+        .instruction {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        /* 核心互動區域 */
+        .workspace {
+            background-color: var(--card-bg);
+            border-radius: 20px;
+            padding: 25px;
+            width: 100%;
+            max-width: 800px;
+            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 25px;
+        }
+
+        /* 數字卡牌（拖曳源） */
+        .cards-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
+            width: 100%;
+            min-height: 80px;
+            padding: 10px;
+            background: #EDF2F7;
+            border-radius: 12px;
+        }
+
+        .number-card {
+            width: 65px;
+            height: 75px;
+            background-color: var(--accent-color);
+            border: 3px solid #F4A261;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #2B2D42;
+            cursor: grab;
+            box-shadow: 0 4px 0 #E76F51;
+            transition: transform 0.1s;
+        }
+
+        .number-card:active {
+            cursor: grabbing;
+            transform: scale(1.05);
+        }
+
+        .dots {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2px;
+            justify-content: center;
+            width: 80%;
+            margin-top: 2px;
+        }
+
+        .dot {
+            width: 6px;
+            height: 6px;
+            background-color: #E76F51;
+            border-radius: 50%;
+        }
+
+        /* 放置區 (Drop Zone) 結構 */
+        .tree-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            position: relative;
+        }
+
+        .drop-row {
+            display: flex;
+            gap: 40px;
+            justify-content: center;
+        }
+
+        .drop-box {
+            width: 85px;
+            height: 95px;
+            border: 3px dashed #CBD5E0;
+            border-radius: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #FAF5FF;
+            transition: all 0.2s;
+        }
+
+        .drop-box.fixed {
+            border-style: solid;
+            border-color: var(--primary-color);
+            background-color: #EBF8FF;
+        }
+
+        .drop-box.drag-over {
+            border-color: var(--secondary-color);
+            background-color: #FFF5F5;
+            transform: scale(1.05);
+        }
+
+        /* 組合成功的按鈕 */
+        .check-btn {
+            padding: 10px 25px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            background-color: #48BB78;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #2F855A;
+        }
+
+        .check-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #2F855A;
+        }
+
+        /* 完成列表（紀錄不重複的組合） */
+        .records-section {
+            width: 100%;
+            max-width: 800px;
+            margin-top: 20px;
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .records-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #4A5568;
+            margin-bottom: 10px;
+        }
+
+        .records-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .record-badge {
+            background-color: #E2E8F0;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #2D3748;
+            border: 2px solid #CBD5E0;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 老師控制區 -->
+    <div class="teacher-panel">
+        <div class="panel-group">
+            <label for="mode-select">模式：</label>
+            <select id="mode-select" onchange="initGame()">
+                <option value="split">分解 (分成...)</option>
+                <option value="join">合成 (合起來是...)</option>
+            </select>
+        </div>
+        <div class="panel-group">
+            <label for="target-num">目標數字：</label>
+            <select id="target-num" onchange="initGame()">
+                <!-- 1 ~ 10 -->
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+                <option value="8" selected>8</option>
+                <option value="9">9</option>
+                <option value="10">10</option>
+            </select>
+        </div>
+        <button class="check-btn" style="background-color: #ED8936; box-shadow: 0 4px 0 #C05621;" onclick="initGame()">重新開始</button>
+    </div>
+
+    <!-- 引導文字 -->
+    <div class="instruction" id="instruction-text">拉動卡牌完成分解</div>
+
+    <!-- 學生工作區 -->
+    <div class="workspace">
+        
+        <!-- 放置樹 (上1下2 或 上2下1) -->
+        <div class="tree-container" id="tree-container">
+            <!-- 由 JS 動態生成 -->
+        </div>
+
+        <button class="check-btn" onclick="checkAnswer()">確認答案</button>
+
+        <!-- 可拉動的卡牌池 (0~10) -->
+        <div class="cards-container" id="cards-pool">
+            <!-- 由 JS 動態生成 -->
+        </div>
+    </div>
+
+    <!-- 紀錄完成的所有組合 -->
+    <div class="records-section">
+        <div class="records-title" id="records-title">已找出的組合 (不重複)：</div>
+        <div class="records-grid" id="records-grid">
+            <!-- 記錄會出現在這裡 -->
+        </div>
+    </div>
+
+    <script>
+        let mode = 'split'; // 'split' 或 'join'
+        let targetNum = 8;
+        let foundCombinations = new Set();
+        let draggedCardValue = null;
+
+        // 初始化遊戲
+        function initGame() {
+            mode = document.getElementById('mode-select').value;
+            targetNum = parseInt(document.getElementById('target-num').value);
+            foundCombinations.clear();
+            updateRecordsUI();
+
+            const instructionText = document.getElementById('instruction-text');
+            const treeContainer = document.getElementById('tree-container');
+
+            if (mode === 'split') {
+                instructionText.innerText = `請把 ${targetNum} 分成兩個數字`;
+                treeContainer.innerHTML = `
+                    <div class="drop-row">
+                        <div class="drop-box fixed">${createCardHTML(targetNum)}</div>
+                    </div>
+                    <div style="font-size: 2rem; color: #A0AEC0;">👇</div>
+                    <div class="drop-row">
+                        <div class="drop-box empty" data-box="part1" ondragover="allowDrop(event)" ondragleave="dragLeave(event)" ondrop="drop(event)"></div>
+                        <div class="drop-box empty" data-box="part2" ondragover="allowDrop(event)" ondragleave="dragLeave(event)" ondrop="drop(event)"></div>
+                    </div>
+                `;
+            } else {
+                instructionText.innerText = `請拉兩個數字合起來變成 ${targetNum}`;
+                treeContainer.innerHTML = `
+                    <div class="drop-row">
+                        <div class="drop-box empty" data-box="part1" ondragover="allowDrop(event)" ondragleave="dragLeave(event)" ondrop="drop(event)"></div>
+                        <div class="drop-box empty" data-box="part2" ondragover="allowDrop(event)" ondragleave="dragLeave(event)" ondrop="drop(event)"></div>
+                    </div>
+                    <div style="font-size: 2rem; color: #A0AEC0;">👇</div>
+                    <div class="drop-row">
+                        <div class="drop-box fixed">${createCardHTML(targetNum)}</div>
+                    </div>
+                `;
+            }
+
+            renderCardsPool();
+        }
+
+        // 渲染 0~10 卡牌區
